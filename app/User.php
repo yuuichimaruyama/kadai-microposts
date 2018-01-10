@@ -94,13 +94,59 @@ class User extends Model implements AuthenticatableContract,
             return false;
         }
     }
+    
     public function feed_microposts()
     {
         $follow_user_ids = $this->followings()->lists('users.id')->toArray();
         $follow_user_ids[] = $this->id;
         return Micropost::whereIn('user_id', $follow_user_ids);
     }
+    
+    public function favorites()
+    {
+        //   OK!
+        //わかりました　
+        return $this->belongsToMany(Micropost::class, 'favorites', 'user_id', 'micropost_id')->withTimestamps();
+    }
+    public function is_favorite($micropostId){
+        return $this->favorites()->where('micropost_id', $micropostId)->exists();
+    }
+    public function favorite($micropostId) { 
+        // 既にお気に入りにしているかの確認 
+
+        $exist = $this->is_favorite($micropostId); 
+        // 自分自身ではないかの確認 
+        //$its_me = $this->id == $userId;
+    if ($exist) {
+        // 既にお気に入りしていれば何もしない
+
+        return false;
+
+        } else {
+
+        // 未設定。お気に入りにする
+
+        $this->favorites()->attach($micropostId);
+
+        return true;
+
+        }
+    }
+
+    public function unfavorite($micropostId)
+    {
+        // 既にお気に入りにしているかの確認
+        $exist = $this->is_favorite($micropostId);
+        // 自分自身ではないかの確認
+        //$its_me = $this->id == $userId;
+    
+        if ($exist) {
+            // 既にフォローしていればフォローを外す
+            $this->favorites()->detach($micropostId);
+            return true;
+        } else {
+            // 未フォローであれば何もしない
+            return false;
+        }
+    }
 }
-
-
-
